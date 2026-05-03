@@ -40,6 +40,7 @@ The interface is inspired by **Google Colab's notebook style** — collapsible c
 
 ## 🌐 Live Demo
 
+>https://sneha-space.github.io/naive-bayes-app/
 > Open `index.html` directly in any modern browser — no server, no backend, no installation needed.
 
 ```bash
@@ -67,18 +68,18 @@ xdg-open index.html   # Linux
 
 ## ✨ Features
 
-- 📂 **Drag-and-drop CSV upload** with instant dataset preview
-- 🔧 **Full preprocessing pipeline** — missing values, encoding, scaling, feature selection
-- 📊 **EDA visualizations** — class distribution, feature histograms, Pearson correlation heatmap
-- 🧮 **Step-by-step NB math** — prior, likelihood, independence assumption, posterior — all shown with real numbers from your data
-- 📐 **Gaussian NB** with PDF curve overlays per class per feature
-- 📝 **Multinomial NB** with Laplace smoothing and zero-frequency problem highlighting
-- 🔀 **Train/Test split** with adjustable slider (50–90%)
-- 🔁 **k-Fold Cross Validation** with fold-wise accuracy chart
-- 🔮 **Custom sample prediction** with full log-space walkthrough
-- 📈 **Confusion matrix** + Precision / Recall / F1 per class + Macro average
-- 📚 **Persistent help drawer** — Glossary, Why Each Step, Common Mistakes, Formula Sheet
-- 🌙 **Dark academic theme** — readable, distraction-free interface
+- **Drag-and-drop CSV upload** with instant dataset preview
+- **Full preprocessing pipeline** — missing values, encoding, scaling, feature selection
+- **EDA visualizations** — class distribution, feature histograms, Pearson correlation heatmap
+- **Step-by-step NB math** — prior, likelihood, independence assumption, posterior — all shown with real numbers from your data
+- **Gaussian NB** with PDF curve overlays per class per feature
+- **Multinomial NB** with Laplace smoothing and zero-frequency problem highlighting
+- **Train/Test split** with adjustable slider (50–90%)
+- **k-Fold Cross Validation** with fold-wise accuracy chart
+- **Custom sample prediction** with full log-space walkthrough
+- **Confusion matrix** + Precision / Recall / F1 per class + Macro average
+- **Persistent help drawer** — Glossary, Why Each Step, Common Mistakes, Formula Sheet
+
 
 ---
 
