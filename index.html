@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Naive Bayes Learning System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f;
+  --surface:#111118;
+  --card:#16161e;
+  --card2:#1c1c26;
+  --border:#2a2a3d;
+  --border2:#3a3a52;
+  --accent:#e8b86d;
+  --accent-dim:rgba(232,184,109,0.12);
+  --accent-glow:rgba(232,184,109,0.25);
+  --blue:#5b8af0;
+  --blue-dim:rgba(91,138,240,0.12);
+  --green:#4caf82;
+  --green-dim:rgba(76,175,130,0.12);
+  --red:#e05c6b;
+  --red-dim:rgba(224,92,107,0.12);
+  --purple:#9b72cf;
+  --purple-dim:rgba(155,114,207,0.12);
+  --text:#d4d4e8;
+  --text2:#8888aa;
+  --text3:#5555770;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* HEADER */
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:200;margin:0 auto;max-width:1200px;width:100%}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-text{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--text)}
+.logo-text span{color:var(--accent)}
+.header-right{display:flex;align-items:center;gap:12px}
+.progress-pill{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-family:var(--mono);font-size:11px;color:var(--text2)}
+.progress-pill span{color:var(--accent)}
+.reset-btn{background:none;border:1px solid var(--border);color:var(--text2);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px;font-family:var(--sans);transition:all .2s}
+.reset-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* LAYOUT */
+.layout{display:flex;height:calc(100vh - 52px);max-width:1200px;margin:0 auto;width:100%}
+.sidebar{width:220px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:12px 0}
+.main-content{flex:1;overflow-y:auto;padding:24px}
+
+/* SIDEBAR */
+.sidebar-section-label{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;padding:8px 16px 4px}
+.sidebar-item{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;transition:all .15s;border-left:2px solid transparent}
+.sidebar-item:hover{background:var(--card)}
+.sidebar-item.active{background:var(--accent-dim);border-left-color:var(--accent)}
+.sidebar-item.active .si-num{color:var(--accent)}
+.sidebar-item.active .si-label{color:var(--text)}
+.sidebar-item.done .si-num{color:var(--green)}
+.si-num{font-family:var(--mono);font-size:11px;color:var(--text2);width:18px}
+.si-label{font-size:12px;color:var(--text2);flex:1}
+
+/* CELL - Google Colab style */
+.notebook{max-width:900px}
+.cell{background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;overflow:hidden;transition:border-color .2s}
+.cell:hover{border-color:var(--border2)}
+.cell.cell-active{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent-glow)}
+.cell.cell-done{border-color:rgba(76,175,130,0.3)}
+.cell-header{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none;background:var(--card2)}
+.cell-num{font-family:var(--mono);font-size:11px;color:var(--text2)}
+.cell-title{flex:1;font-weight:500;font-size:14px}
+.cell-badge{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.05em}
+.badge-pending{background:rgba(85,85,119,0.2);color:var(--text2)}
+.badge-active{background:var(--accent-dim);color:var(--accent)}
+.badge-done{background:var(--green-dim);color:var(--green)}
+.cell-body{padding:20px;display:none;border-top:1px solid var(--border)}
+.cell-body.open{display:block}
+
+/* COLAB-STYLE INFO BOX */
+.info-box{background:var(--blue-dim);border:1px solid rgba(91,138,240,0.2);border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;font-size:13px;line-height:1.6}
+.info-box.warn{background:var(--accent-dim);border-color:rgba(232,184,109,0.25)}
+.info-box.success{background:var(--green-dim);border-color:rgba(76,175,130,0.2)}
+.info-box.tip{background:var(--purple-dim);border-color:rgba(155,114,207,0.2)}
+
+/* UPLOAD */
+.drop-zone{border:2px dashed var(--border2);border-radius:10px;padding:40px;text-align:center;cursor:pointer;transition:all .25s;position:relative}
+.drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);background:var(--accent-dim)}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.drop-title{font-size:15px;font-weight:500;margin-bottom:6px}
+.drop-sub{font-size:12px;color:var(--text2)}
+
+/* TABLE */
+.nb-table{width:100%;border-collapse:collapse;font-size:13px;font-family:var(--mono)}
+.nb-table th{background:var(--card2);color:var(--accent);font-weight:500;padding:8px 12px;border:1px solid var(--border);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.nb-table td{padding:8px 12px;border:1px solid var(--border);color:var(--text);vertical-align:top}
+.nb-table tr:hover td{background:rgba(255,255,255,.02)}
+.nb-table td.cell-good{background:var(--green-dim);color:var(--green)}
+.nb-table td.cell-bad{background:var(--red-dim);color:var(--red)}
+.nb-table td.cell-warn{background:var(--accent-dim);color:var(--accent)}
+.nb-table tfoot td{background:var(--card2);font-weight:500;color:var(--text)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:7px;border:none;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:500;transition:all .2s}
+.btn-primary{background:var(--accent);color:#0a0a0f}
+.btn-primary:hover{background:#f0c87d;box-shadow:0 4px 16px var(--accent-glow)}
+.btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-run{background:var(--green);color:#0a0a0f;min-width:120px;justify-content:center}
+.btn-run:hover{background:#5dca96}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-danger{background:var(--red-dim);color:var(--red);border:1px solid rgba(224,92,107,.3)}
+.btn-ghost{background:none;border:1px solid var(--border);color:var(--text2)}
+.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+
+/* FORM CONTROLS */
+.label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-family:var(--mono)}
+.input,.select{background:var(--card2);color:var(--text);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-family:var(--sans);font-size:13px;width:100%;outline:none;transition:border-color .2s}
+.input:focus,.select:focus{border-color:var(--accent)}
+.select option{background:var(--card)}
+.checkbox-row{display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0}
+.checkbox-row input[type=checkbox]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+.checkbox-row input[type=radio]{accent-color:var(--accent);width:14px;height:14px;cursor:pointer}
+.checkbox-row label{font-size:13px;cursor:pointer}
+.range-wrap{position:relative}
+.range-input{width:100%;-webkit-appearance:none;appearance:none;height:4px;background:var(--border2);border-radius:2px;outline:none}
+.range-input::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 6px var(--accent-glow)}
+
+/* SECTION */
+.section{margin-bottom:20px}
+.section-title{font-family:var(--mono);font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.stat-card{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px}
+.stat-label{font-size:11px;color:var(--text2);font-family:var(--mono);margin-bottom:4px}
+.stat-val{font-size:22px;font-weight:600;color:var(--text);font-family:var(--mono)}
+.stat-val.accent{color:var(--accent)}
+.stat-val.green{color:var(--green)}
+
+/* FORMULA */
+.formula{background:#0d0d18;border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:6px;padding:12px 16px;font-family:var(--mono);font-size:13px;line-height:1.9;color:#c8c8e8;margin:12px 0;overflow-x:auto}
+.formula .kw{color:var(--accent)}
+.formula .val{color:var(--blue)}
+.formula .comment{color:var(--text2)}
+
+/* STEP */
+.step-block{border-left:2px solid var(--border);padding-left:16px;margin:12px 0}
+.step-block .step-title{font-family:var(--mono);font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.step-block .step-body{font-size:13px;color:var(--text2);line-height:1.7}
+.step-block.active-step{border-left-color:var(--accent)}
+
+/* WINNER */
+.winner-card{background:var(--green-dim);border:1px solid rgba(76,175,130,.35);border-radius:10px;padding:20px;text-align:center;margin-top:16px}
+.winner-label{font-size:11px;color:var(--green);font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.winner-class{font-size:28px;font-weight:600;color:var(--green);font-family:var(--mono)}
+.winner-prob{font-size:14px;color:var(--text2);margin-top:4px}
+
+/* HEATMAP */
+.heatmap-cell{width:60px;height:60px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;font-weight:500;border-radius:4px;cursor:default;transition:transform .15s}
+.heatmap-cell:hover{transform:scale(1.1);z-index:10;position:relative}
+
+/* CHART CONTAINER */
+.chart-wrap{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:16px;position:relative}
+.chart-wrap canvas{max-height:260px}
+
+/* TOGGLE GROUP */
+.toggle-group{display:flex;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:3px;gap:3px;width:fit-content}
+.toggle-btn{padding:6px 20px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:500;transition:all .2s}
+.toggle-btn.on{background:var(--accent);color:#0a0a0f}
+
+/* HELP DRAWER */
+.help-btn{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#0a0a0f;border:none;border-radius:999px;cursor:pointer;font-size:13px;font-weight:700;z-index:300;box-shadow:0 4px 20px var(--accent-glow);transition:transform .2s;padding:12px 16px}
+.help-btn:hover{transform:scale(1.05)}
+.drawer{position:fixed;top:0;right:-380px;width:380px;height:100vh;background:var(--surface);border-left:1px solid var(--border);z-index:299;transition:right .3s ease;overflow-y:auto}
+.drawer.open{right:0}
+.drawer-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.drawer-head h3{font-size:14px;font-weight:500}
+.drawer-close{background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:0 4px}
+.d-tabs{display:flex;border-bottom:1px solid var(--border)}
+.d-tab{flex:1;padding:10px 8px;background:none;border:none;cursor:pointer;color:var(--text2);font-size:12px;border-bottom:2px solid transparent;transition:all .2s;font-family:var(--sans)}
+.d-tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.d-content{padding:16px;display:none}
+.d-content.on{display:block}
+.glossary-item{padding:10px 0;border-bottom:1px solid var(--border)}
+.glossary-item:last-child{border:none}
+.glossary-term{font-family:var(--mono);font-size:12px;color:var(--accent);margin-bottom:3px}
+.glossary-def{font-size:13px;color:var(--text2);line-height:1.5}
+.accordion-h{width:100%;background:none;border:none;text-align:left;padding:10px 0;cursor:pointer;color:var(--text);font-size:13px;font-family:var(--sans);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.accordion-h::after{content:''}
+.accordion-h.open::after{transform:rotate(-180deg)}
+.accordion-b{display:none;padding:8px 0 12px;color:var(--text2);font-size:13px;line-height:1.6}
+.accordion-b.open{display:block}
+.mistake-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.mistake-item:last-child{border:none}
+.mistake-text{font-size:13px;color:var(--text2);line-height:1.5}
+.formula-ref{background:#0d0d18;border-radius:6px;padding:12px;font-family:var(--mono);font-size:12px;color:#c8c8e8;line-height:2;white-space:pre}
+.formula-ref .fk{color:var(--accent)}
+
+/* BEFORE/AFTER */
+.ba-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.ba-card{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px}
+.ba-label{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+
+/* MISSING VALUE TAG */
+.null-badge{background:var(--red-dim);color:var(--red);padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:11px}
+
+/* COL INFO CARD */
+.col-card{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.col-name{font-family:var(--mono);font-size:12px;color:var(--accent);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.col-meta{display:flex;gap:6px;flex-wrap:wrap}
+.col-tag{font-size:10px;padding:2px 7px;border-radius:4px;font-family:var(--mono)}
+.tag-num{background:var(--blue-dim);color:var(--blue)}
+.tag-cat{background:var(--purple-dim);color:var(--purple)}
+.tag-null{background:var(--red-dim);color:var(--red)}
+
+/* Running total */
+.running-row{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--card2);border-radius:6px;margin:4px 0;font-family:var(--mono);font-size:12px}
+.running-key{color:var(--text2)}
+.running-val{color:var(--accent)}
+
+/* WALKTHROUGH */
+.wt-class{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px}
+.wt-class-title{font-family:var(--mono);font-size:12px;font-weight:600;margin-bottom:10px;color:var(--text)}
+.wt-row{display:flex;gap:8px;padding:5px 0;font-size:12px;font-family:var(--mono);border-bottom:1px solid rgba(42,42,61,.5)}
+.wt-row:last-child{border:none}
+.wt-feat{color:var(--text2);flex:2}
+.wt-formula{color:var(--blue);flex:2}
+.wt-logval{color:var(--green);flex:1;text-align:right}
+.wt-total{display:flex;justify-content:space-between;padding:8px 0 0;margin-top:4px;border-top:1px solid var(--border);font-family:var(--mono);font-size:13px}
+.wt-total-label{color:var(--text2)}
+.wt-total-val{color:var(--accent);font-weight:600}
+
+/* METRICS */
+.metric-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:5px;font-family:var(--mono);font-size:12px;font-weight:500}
+.mb-acc{background:var(--blue-dim);color:var(--blue)}
+.mb-prec{background:var(--green-dim);color:var(--green)}
+.mb-rec{background:var(--purple-dim);color:var(--purple)}
+.mb-f1{background:var(--accent-dim);color:var(--accent)}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:40px;color:var(--text2)}
+.empty-state .es-icon{font-size:36px;margin-bottom:12px;opacity:.5}
+.empty-state p{font-size:13px}
+
+@media(max-width:768px){
+  .sidebar{display:none}
+  .ba-grid{grid-template-columns:1fr}
+  .grid-2{grid-template-columns:1fr}
+  .grid-3{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo">
+    <div class="logo-text">naive<span>bayes</span>.learn</div>
+  </div>
+  <div class="header-right">
+    <div class="progress-pill">Stage <span id="hdr-stage">1</span> of 9</div>
+    <button class="reset-btn" onclick="resetAll()">Reset</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-section-label">Pipeline</div>
+    <div class="sidebar-item active" id="nav-1" onclick="jumpTo(1)"><span class="si-num">1</span><span class="si-label">Dataset Input</span></div>
+    <div class="sidebar-item" id="nav-2" onclick="jumpTo(2)"><span class="si-num">2</span><span class="si-label">Preprocessing</span></div>
+    <div class="sidebar-item" id="nav-3" onclick="jumpTo(3)"><span class="si-num">3</span><span class="si-label">EDA</span></div>
+    <div class="sidebar-item" id="nav-4" onclick="jumpTo(4)"><span class="si-num">4</span><span class="si-label">NB Learning</span></div>
+    <div class="sidebar-item" id="nav-5" onclick="jumpTo(5)"><span class="si-num">5</span><span class="si-label">Training Config</span></div>
+    <div class="sidebar-item" id="nav-6" onclick="jumpTo(6)"><span class="si-num">6</span><span class="si-label">Model Viz</span></div>
+    <div class="sidebar-item" id="nav-7" onclick="jumpTo(7)"><span class="si-num">7</span><span class="si-label">Prediction</span></div>
+    <div class="sidebar-item" id="nav-8" onclick="jumpTo(8)"><span class="si-num">8</span><span class="si-label">Evaluation</span></div>
+    <div class="sidebar-item" id="nav-9" onclick="jumpTo(9)"><span class="si-num">9</span><span class="si-label">Help Layer</span></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="notebook" id="notebook"></div>
+  </main>
+</div>
+
+<button class="help-btn" onclick="toggleDrawer()">Help</button>
+
+<div class="drawer" id="help-drawer">
+  <div class="drawer-head">
+    <h3>Help & Reference</h3>
+    <button class="drawer-close" onclick="toggleDrawer()">Close</button>
+  </div>
+  <div class="d-tabs">
+    <button class="d-tab on" onclick="dTab('glossary',this)">Glossary</button>
+    <button class="d-tab" onclick="dTab('why',this)">Why?</button>
+    <button class="d-tab" onclick="dTab('mistakes',this)">Mistakes</button>
+    <button class="d-tab" onclick="dTab('formulas',this)">Formulas</button>
+  </div>
+  <div class="d-content on" id="d-glossary">
+    <div class="glossary-item"><div class="glossary-term">Prior P(C)</div><div class="glossary-def">How common each class is in training data. Computed before seeing any features.</div></div>
+    <div class="glossary-item"><div class="glossary-term">Likelihood P(X|C)</div><div class="glossary-def">How probable the observed features are, given a specific class.</div></div>
+    <div class="glossary-item"><div class="glossary-term">Posterior P(C|X)</div><div class="glossary-def">Final class probability after combining prior and likelihood using Bayes theorem.</div></div>
+    <div class="glossary-item"><div class="glossary-term">Naive Assumption</div><div class="glossary-def">All features are treated as conditionally independent given the class label.</div></div>
+    <div class="glossary-item"><div class="glossary-term">Laplace Smoothing</div><div class="glossary-def">Adding 1 to all counts to prevent zero-probability for unseen feature values.</div></div>
+    <div class="glossary-item"><div class="glossary-term">Log-space</div><div class="glossary-def">Using log(prob) to avoid numerical underflow when multiplying many small probabilities.</div></div>
+    <div class="glossary-item"><div class="glossary-term">Gaussian PDF</div><div class="glossary-def">Bell-curve formula: P(x|C) = (1/√2πσ²)·exp(-(x-μ)²/2σ²)</div></div>
+    <div class="glossary-item"><div class="glossary-term">Zero-Frequency Problem</div><div class="glossary-def">When a feature value never appeared in a class during training — makes P=0 and kills the whole product.</div></div>
+  </div>
+  <div class="d-content" id="d-why">
+    <button class="accordion-h" onclick="toggleAcc(this)">Stage 1 — Why upload a CSV?</button>
+    <div class="accordion-b">NB needs tabular, labeled data. CSV is the universal ML data format. Each row = one sample, columns = features, one column = the class label.</div>
+    <button class="accordion-h" onclick="toggleAcc(this)">Stage 2 — Why preprocess?</button>
+    <div class="accordion-b">NB breaks completely with missing values (can't compute P(NaN|Class)) and with text features (can't compute Gaussian PDF of a string). Encoding and cleaning are non-negotiable.</div>
+    <button class="accordion-h" onclick="toggleAcc(this)">Stage 3 — Why EDA?</button>
+    <div class="accordion-b">EDA reveals class imbalance (biases prior), feature distributions (helps pick Gaussian vs Multinomial), and correlations (checks the independence assumption).</div>
+    <button class="accordion-h" onclick="toggleAcc(this)">Stage 4 — Why learn priors and likelihoods?</button>
+    <div class="accordion-b">Priors tell NB the base rate of each class. Likelihoods capture how each feature value shifts the probability toward or away from each class. Together they give the posterior.</div>
+    <button class="accordion-h" onclick="toggleAcc(this)">Stage 5 — Why train/test split?</button>
+    <div class="accordion-b">To test if the model generalises. Training accuracy is always higher — the split forces honest evaluation on data the model has never seen.</div>
+    <button class="accordion-h" onclick="toggleAcc(this)">Stage 8 — Why F1, not just accuracy?</button>
+    <div class="accordion-b">Accuracy lies on imbalanced datasets. A model that always predicts "No" on a 95% No dataset gets 95% accuracy but 0% recall. F1 catches this.</div>
+  </div>
+  <div class="d-content" id="d-mistakes">
+    <div class="mistake-item"><div class="mistake-text"><strong>Not handling nulls</strong> — NB returns NaN for every prediction if any feature has missing values.</div></div>
+    <div class="mistake-item"><div class="mistake-text"><strong>Text features without encoding</strong> — Gaussian PDF of a string is undefined. Always encode before training.</div></div>
+    <div class="mistake-item"><div class="mistake-text"><strong>Gaussian NB on count data</strong> — Use Multinomial NB for word counts, frequencies, integer features.</div></div>
+    <div class="mistake-item"><div class="mistake-text"><strong>Skipping log-space</strong> — Multiplying 50+ probabilities of 0.01 causes floating point underflow to 0.0.</div></div>
+    <div class="mistake-item"><div class="mistake-text"><strong>Ignoring class imbalance</strong> — The prior dominates; a rare class almost never gets predicted. Balance your dataset or adjust priors.</div></div>
+    <div class="mistake-item"><div class="mistake-text"><strong>Evaluating on training data</strong> — The model has "seen" this data. Always evaluate on the held-out test set.</div></div>
+    <div class="mistake-item"><div class="mistake-text"><strong>Assuming independence holds</strong> — Check the correlation heatmap. Highly correlated features hurt NB's calibration.</div></div>
+  </div>
+  <div class="d-content" id="d-formulas">
+    <div class="formula-ref"><span class="fk">Bayes:</span>     P(C|X) = P(X|C) × P(C) / P(X)
+<span class="fk">Prior:</span>     P(C) = count(C) / N
+<span class="fk">Gaussian:</span>  P(x|C) = (1/√2πσ²)·exp(-(x-μ)²/2σ²)
+<span class="fk">Laplace:</span>   P(xᵢ=v|C) = (count+1) / (|C|+k)
+<span class="fk">Log-score:</span> logP(C|X) ∝ logP(C) + Σ logP(xᵢ|C)
+<span class="fk">Softmax:</span>   P(C) = exp(score) / Σ exp(scores)
+<span class="fk">Accuracy:</span>  (TP+TN)/(TP+TN+FP+FN)
+<span class="fk">Precision:</span> TP/(TP+FP)
+<span class="fk">Recall:</span>    TP/(TP+FN)
+<span class="fk">F1:</span>        2·P·R/(P+R)</div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// APP STATE
+// ─────────────────────────────────────────
+const S = {
+  raw: null, data: [], headers: [],
+  targetCol: null, features: [], classes: [],
+  nbType: 'gaussian', splitRatio: 0.8, kFold: false, kValue: 5,
+  trainData: [], testData: [],
+  model: null, predictions: [],
+  charts: {}, processedData: [],
+  stagesDone: new Set(), currentStage: 1,
+  encodingMap: {}
+};
+
+// ─────────────────────────────────────────
+// UTILITIES
+// ─────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const mkEl = (tag, cls, html) => { const e = document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; };
+
+function mean(arr) { return arr.reduce((a,b)=>a+b,0)/arr.length; }
+function variance(arr) { const m=mean(arr); return mean(arr.map(x=>(x-m)**2)); }
+function stddev(arr) { return Math.sqrt(variance(arr)); }
+function isNum(v) { return typeof v === 'number' && !isNaN(v); }
+function colIsNumeric(colName, data) { return data.every(r => isNum(r[colName])); }
+function uniqueVals(col, data) { return [...new Set(data.map(r=>r[col]))]; }
+function classRows(cls, data) { return data.filter(r=>r[S.headers[S.targetCol]]===cls); }
+
+function gaussianPDF(x, mu, sig2) {
+  if(sig2 <= 0) sig2 = 1e-9;
+  return (1/Math.sqrt(2*Math.PI*sig2)) * Math.exp(-((x-mu)**2)/(2*sig2));
+}
+
+function logGaussianPDF(x, mu, sig2) {
+  if(sig2 <= 0) sig2 = 1e-9;
+  return -0.5*Math.log(2*Math.PI*sig2) - ((x-mu)**2)/(2*sig2);
+}
+
+function softmax(scores) {
+  const cls = Object.keys(scores);
+  const vals = cls.map(c=>scores[c]);
+  const maxV = Math.max(...vals);
+  const exps = vals.map(v=>Math.exp(v-maxV));
+  const sum = exps.reduce((a,b)=>a+b,0);
+  const probs = {};
+  cls.forEach((c,i)=>probs[c]=exps[i]/sum);
+  return probs;
+}
+
+function destroyChart(key) {
+  if(S.charts[key]) { try{ S.charts[key].destroy(); }catch(e){} S.charts[key]=null; }
+}
+
+function cloneData(d) { return JSON.parse(JSON.stringify(d)); }
+
+// ─────────────────────────────────────────
+// STAGE MANAGEMENT
+// ─────────────────────────────────────────
+function setStage(n, status) {
+  const cell = $('cell-'+n);
+  if(!cell) return;
+  const badge = cell.querySelector('.cell-badge');
+  const nav = $('nav-'+n);
+  cell.className = 'cell';
+  if(status==='active') {
+    cell.classList.add('cell-active');
+    badge.className='cell-badge badge-active'; badge.textContent='Active';
+    nav?.classList.add('active'); nav?.classList.remove('done');
+    $('hdr-stage').textContent = n;
+    S.currentStage = n;
+  } else if(status==='done') {
+    cell.classList.add('cell-done');
+    badge.className='cell-badge badge-done'; badge.textContent='Done';
+    S.stagesDone.add(n);
+    nav?.classList.remove('active'); nav?.classList.add('done');
+  } else {
+    badge.className='cell-badge badge-pending'; badge.textContent='Pending';
+  }
+}
+
+function openCell(n) {
+  const body = $('body-'+n);
+  if(!body) return;
+  body.classList.add('open');
+  body.scrollIntoView({behavior:'smooth', block:'start'});
+  setStage(n, 'active');
+  $('hdr-stage').textContent = n;
+}
+
+function jumpTo(n) {
+  const body = $('body-'+n);
+  if(!body) return;
+  if(!body.classList.contains('open')) body.classList.add('open');
+  body.scrollIntoView({behavior:'smooth', block:'start'});
+  // update sidebar
+  document.querySelectorAll('.sidebar-item').forEach(el=>el.classList.remove('active'));
+  $('nav-'+n)?.classList.add('active');
+}
+
+function toggleCell(n) {
+  const body = $('body-'+n);
+  if(!body) return;
+  body.classList.toggle('open');
+}
+
+function advanceTo(n) {
+  setStage(n-1,'done');
+  openCell(n);
+  // init if needed
+  const inits = {2:initStage2, 3:initStage3, 4:initStage4, 5:initStage5, 6:initStage6, 7:initStage7, 8:initStage8, 9:initStage9};
+  if(inits[n]) inits[n]();
+}
+
+function resetAll() {
+  if(!confirm('Reset everything?')) return;
+  S.raw=null; S.data=[]; S.headers=[]; S.targetCol=null; S.features=[];
+  S.classes=[]; S.model=null; S.predictions=[]; S.processedData=[];
+  S.stagesDone=new Set(); S.currentStage=1; S.encodingMap={};
+  Object.values(S.charts).forEach(c=>{try{c?.destroy();}catch(e){}});
+  S.charts={};
+  buildNotebook();
+}
+
+// ─────────────────────────────────────────
+// BUILD NOTEBOOK SHELL
+// ─────────────────────────────────────────
+const CELLS = [
+  {n:1, title:'Dataset Input', icon:'📂'},
+  {n:2, title:'Preprocessing', icon:'🔧'},
+  {n:3, title:'Exploratory Data Analysis', icon:'📊'},
+  {n:4, title:'Naive Bayes Learning Module', icon:'🧮'},
+  {n:5, title:'Training Configuration', icon:'⚙️'},
+  {n:6, title:'Model Training & Visualization', icon:'🎯'},
+  {n:7, title:'Prediction & Inference', icon:'🔮'},
+  {n:8, title:'Evaluation Metrics', icon:'📈'},
+  {n:9, title:'Educational Summary', icon:'📚'},
+];
+
+function buildNotebook() {
+  const nb = $('notebook');
+  nb.innerHTML = '';
+  CELLS.forEach(({n,title,icon}) => {
+    const isFirst = n===1;
+    const cell = mkEl('div', 'cell' + (isFirst?' cell-active':''));
+    cell.id = 'cell-'+n;
+    cell.innerHTML = `
+      <div class="cell-header" onclick="toggleCell(${n})">
+        <div class="cell-num">[${n}]</div>
+        <div class="cell-title">${title}</div>
+        <div class="cell-badge ${isFirst?'badge-active':'badge-pending'}">${isFirst?'Active':'Pending'}</div>
+      </div>
+      <div class="cell-body ${isFirst?'open':''}" id="body-${n}"></div>
+    `;
+    nb.appendChild(cell);
+  });
+  initStage1();
+}
+
+// ─────────────────────────────────────────
+// STAGE 1 — DATASET INPUT
+// ─────────────────────────────────────────
+function initStage1() {
+  const b = $('body-1');
+  b.innerHTML = `
+    <div class="info-box"><div>Upload any CSV file with labeled data. The last column is often the class label but you can choose. Try the classic <strong>Iris</strong>, <strong>Titanic</strong>, or <strong>Play Tennis</strong> datasets.</div></div>
+    <div class="drop-zone" id="dz">
+      <input type="file" accept=".csv" id="file-inp" onchange="handleFile(this.files[0])">
+      <div class="drop-title">Drag & drop your CSV here</div>
+      <div class="drop-sub">or click to browse — max 10MB</div>
+    </div>
+    <div id="s1-preview" style="display:none">
+      <div class="section" style="margin-top:20px">
+        <div class="section-title">Dataset Overview</div>
+        <div class="grid-3" id="s1-stats"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">First 5 Rows</div>
+        <div style="overflow-x:auto" id="s1-table"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Column Details</div>
+        <div id="s1-cols" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Select Target Column</div>
+        <div class="info-box warn"><div>The target column contains the class labels Naive Bayes will learn to predict (e.g. spam/ham, yes/no, species name).</div></div>
+        <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <label class="label">Target column</label>
+            <select class="select" id="target-sel" onchange="onTargetSelect()">
+              <option value="">— choose a column —</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="confirmStage1()">Confirm & Preprocess →</button>
+        </div>
+        <div id="s1-summary" style="display:none;margin-top:14px"></div>
+      </div>
+    </div>
+  `;
+  const dz = $('dz');
+  dz.addEventListener('dragover', e=>{e.preventDefault(); dz.classList.add('dragover');});
+  dz.addEventListener('dragleave', ()=>dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e=>{e.preventDefault(); dz.classList.remove('dragover'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);});
+}
+
+function handleFile(file) {
+  Papa.parse(file, {
+    header:true, dynamicTyping:true, skipEmptyLines:true,
+    complete(res) {
+      S.raw = res; S.data = res.data; S.headers = res.meta.fields;
+      S.processedData = cloneData(S.data);
+      renderS1Preview();
+      console.log('CSV loaded:', S.data.length, 'rows ×', S.headers.length, 'cols');
+    },
+    error(e) { alert('CSV parse error: '+e.message); }
+  });
+}
+
+function renderS1Preview() {
+  $('s1-preview').style.display='block';
+  // Stats
+  const totalNull = S.headers.reduce((sum,h)=>sum+S.data.filter(r=>r[h]===null||r[h]===undefined||r[h]==='').length,0);
+  $('s1-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Rows</div><div class="stat-val accent">${S.data.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Columns</div><div class="stat-val accent">${S.headers.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Missing Values</div><div class="stat-val ${totalNull>0?'':'green'}">${totalNull}</div></div>
+  `;
+  // Table
+  const rows5 = S.data.slice(0,5);
+  let th = S.headers.map(h=>`<th>${h}</th>`).join('');
+  let tbody = rows5.map((r,i)=>`<tr>${S.headers.map(h=>`<td>${r[h]??'<span class="null-badge">null</span>'}</td>`).join('')}</tr>`).join('');
+  $('s1-table').innerHTML=`<table class="nb-table"><thead><tr>${th}</tr></thead><tbody>${tbody}</tbody></table>`;
+  // Cols
+  const colsDiv = $('s1-cols'); colsDiv.innerHTML='';
+  S.headers.forEach(h=>{
+    const isN = colIsNumeric(h, S.data);
+    const nulls = S.data.filter(r=>r[h]===null||r[h]===undefined||r[h]==='').length;
+    const c = mkEl('div','col-card');
+    c.innerHTML=`<div class="col-name" title="${h}">${h}</div><div class="col-meta">
+      <span class="col-tag ${isN?'tag-num':'tag-cat'}">${isN?'numeric':'categorical'}</span>
+      ${nulls>0?`<span class="col-tag tag-null">${nulls} null</span>`:''}
+    </div>`;
+    colsDiv.appendChild(c);
+  });
+  // Target select
+  const sel = $('target-sel');
+  sel.innerHTML = '<option value="">— choose a column —</option>' + S.headers.map(h=>`<option value="${h}">${h}</option>`).join('');
+  // Auto-select last col
+  sel.value = S.headers[S.headers.length-1];
+  onTargetSelect();
+}
+
+function onTargetSelect() {
+  const sel = $('target-sel'); if(!sel||!sel.value) return;
+  const col = sel.value;
+  const idx = S.headers.indexOf(col);
+  S.targetCol = idx;
+  S.features = S.headers.map((_,i)=>i).filter(i=>i!==idx);
+  S.classes = uniqueVals(col, S.data);
+  const sumDiv = $('s1-summary'); if(!sumDiv) return;
+  sumDiv.style.display='block';
+  sumDiv.innerHTML=`<div class="info-box success"><div class="ib-icon">✅</div><div>
+    <strong>Target:</strong> ${col} &nbsp;|&nbsp;
+    <strong>Classes:</strong> ${S.classes.join(', ')} &nbsp;|&nbsp;
+    <strong>Features:</strong> ${S.features.length} columns
+  </div></div>`;
+}
+
+function confirmStage1() {
+  if(S.targetCol===null) { alert('Please select a target column.'); return; }
+  advanceTo(2);
+}
+
+// ─────────────────────────────────────────
+// STAGE 2 — PREPROCESSING
+// ─────────────────────────────────────────
+function initStage2() {
+  const b = $('body-2');
+  b.innerHTML = `
+    <div class="info-box"><div class="ib-icon">🔧</div><div>Clean and transform your data before training. NB cannot handle missing values or raw text strings. Each sub-section shows Before → After comparison.</div></div>
+
+    <!-- A: Missing values -->
+    <div class="section"><div class="section-title">A — Missing Value Handling</div>
+      <div id="s2-missing-before"></div>
+      <div id="s2-missing-actions"></div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="applyMissing()">▶ Apply Missing Value Fix</button>
+      <div id="s2-missing-after" style="margin-top:10px"></div>
+    </div>
+
+    <!-- B: Encoding -->
+    <div class="section"><div class="section-title">B — Categorical Encoding</div>
+      <div id="s2-enc-before"></div>
+      <div id="s2-enc-options"></div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:10px" onclick="applyEncoding()">▶ Apply Encoding</button>
+      <div id="s2-enc-after" style="margin-top:10px"></div>
+    </div>
+
+    <!-- C: Scaling -->
+    <div class="section"><div class="section-title">C — Feature Scaling (Optional)</div>
+      <div class="checkbox-row"><input type="checkbox" id="scaling-enable" onchange="toggleScaling()"><label for="scaling-enable">Enable feature scaling</label></div>
+      <div id="s2-scaling-opts" style="display:none;margin-top:10px">
+        <div style="display:flex;gap:16px;margin-bottom:10px">
+          <div class="checkbox-row"><input type="radio" name="scale-type" value="minmax" id="sc-mm" checked><label for="sc-mm">Min-Max [0,1]</label></div>
+          <div class="checkbox-row"><input type="radio" name="scale-type" value="zscore" id="sc-zs"><label for="sc-zs">Z-score</label></div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="applyScaling()">▶ Apply Scaling</button>
+        <div id="s2-scaling-after" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- D: Feature selection -->
+    <div class="section"><div class="section-title">D — Feature Selection</div>
+      <div id="s2-features-list"></div>
+      <div id="s2-feat-count" style="margin-top:8px;font-size:12px;color:var(--text2)"></div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn btn-run" onclick="confirmStage2()">Run → EDA</button>
+    </div>
+  `;
+  renderS2Missing();
+  renderS2Encoding();
+  renderS2Features();
+}
+
+function renderS2Missing() {
+  const data = S.processedData;
+  const counts = {}; let total=0;
+  S.headers.forEach(h=>{ counts[h]=data.filter(r=>r[h]===null||r[h]===undefined||r[h]==='').length; total+=counts[h]; });
+  $('s2-missing-before').innerHTML = `<div class="info-box ${total>0?'warn':'success'}"><div class="ib-icon">${total>0?'⚠️':'✅'}</div><div>Found <strong>${total}</strong> missing values across ${Object.values(counts).filter(v=>v>0).length} columns.</div></div>`;
+  let html='<table class="nb-table" style="margin-bottom:8px"><thead><tr><th>Column</th><th>Type</th><th>Nulls</th><th>Action</th></tr></thead><tbody>';
+  S.headers.forEach(h=>{
+    const isN = colIsNumeric(h, data);
+    const n = counts[h];
+    const opts = ['Keep as is','Drop rows', isN?'Fill with Mean':'Fill with Mode'];
+    const auto = n>0 ? (isN?'Fill with Mean':'Fill with Mode') : 'Keep as is';
+    html+=`<tr>
+      <td><code>${h}</code></td>
+      <td><span class="col-tag ${isN?'tag-num':'tag-cat'}" style="display:inline-block">${isN?'numeric':'categorical'}</span></td>
+      <td>${n>0?`<span class="null-badge">${n}</span>`:'0'}</td>
+      <td><select class="select" style="padding:4px 8px;font-size:12px" id="miss-${h}" onchange="void 0">
+        ${opts.map(o=>`<option ${o===auto?'selected':''}>${o}</option>`).join('')}
+      </select></td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  $('s2-missing-actions').innerHTML = html;
+}
+
+function applyMissing() {
+  let data = cloneData(S.processedData);
+  S.headers.forEach(h => {
+    const action = document.getElementById('miss-'+h)?.value || 'Keep as is';
+    if(action==='Drop rows') {
+      data = data.filter(r=>r[h]!==null&&r[h]!==undefined&&r[h]!=='');
+    } else if(action==='Fill with Mean') {
+      const nums = data.map(r=>r[h]).filter(v=>isNum(v));
+      if(nums.length) { const m=mean(nums); data.forEach(r=>{ if(r[h]===null||r[h]===undefined||r[h]==='') r[h]=parseFloat(m.toFixed(4)); }); }
+    } else if(action==='Fill with Mode') {
+      const vals = data.map(r=>r[h]).filter(v=>v!==null&&v!==undefined&&v!=='');
+      if(vals.length) { const freq={}; vals.forEach(v=>freq[v]=(freq[v]||0)+1); const mode=Object.keys(freq).reduce((a,b)=>freq[a]>freq[b]?a:b); data.forEach(r=>{ if(r[h]===null||r[h]===undefined||r[h]==='') r[h]=mode; }); }
+    }
+  });
+  S.processedData = data;
+  const remaining = S.headers.reduce((s,h)=>s+data.filter(r=>r[h]===null||r[h]===undefined||r[h]==='').length,0);
+  $('s2-missing-after').innerHTML=`<div class="info-box success"><div class="ib-icon">✅</div><div>After fix: <strong>${remaining}</strong> missing values. Dataset now has <strong>${data.length}</strong> rows.</div></div>`;
+  console.log('Missing handled. Rows:', data.length);
+}
+
+function renderS2Encoding() {
+  const data = S.processedData;
+  const catCols = S.features.map(i=>S.headers[i]).filter(h=>!colIsNumeric(h,data));
+  if(!catCols.length) {
+    $('s2-enc-options').innerHTML='<div class="info-box success"><div class="ib-icon">✅</div><div>No categorical feature columns detected. All features are numeric.</div></div>';
+    return;
+  }
+  let html='';
+  catCols.forEach(h=>{
+    const uv = uniqueVals(h,data);
+    html+=`<div style="margin-bottom:10px;padding:10px;background:var(--card2);border:1px solid var(--border);border-radius:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div><code style="color:var(--accent)">${h}</code> <span class="col-tag tag-cat" style="display:inline-block">${uv.length} unique values</span></div>
+        <select class="select" style="width:auto;padding:4px 10px;font-size:12px" id="enc-${h}">
+          <option value="label">Label Encoding</option>
+          <option value="onehot">One-Hot Encoding</option>
+        </select>
+      </div>
+      <div style="margin-top:8px;font-size:12px;color:var(--text2)">Values: ${uv.slice(0,6).map(v=>`<span style="background:var(--card);padding:2px 6px;border-radius:4px;margin-right:4px">${v}</span>`).join('')}${uv.length>6?'...':''}</div>
+    </div>`;
+  });
+  $('s2-enc-options').innerHTML = html;
+}
+
+function applyEncoding() {
+  let data = cloneData(S.processedData);
+  let headers = [...S.headers];
+  const catCols = S.features.map(i=>S.headers[i]).filter(h=>!colIsNumeric(h,data));
+  const rows = [];
+  catCols.forEach(h => {
+    const type = document.getElementById('enc-'+h)?.value || 'label';
+    const uv = uniqueVals(h,data);
+    if(type==='label') {
+      const map={}; uv.forEach((v,i)=>map[v]=i);
+      S.encodingMap[h]=map;
+      data.forEach(r=>r[h]=map[r[h]]??r[h]);
+      rows.push(`<div class="running-row"><span class="running-key">${h}</span><span class="running-val">Label encoded: ${Object.entries(map).map(([k,v])=>`${k}→${v}`).join(', ')}</span></div>`);
+    } else {
+      uv.forEach(v=>{
+        const nc=`${h}_${v}`;
+        data.forEach(r=>r[nc]=r[h]===v?1:0);
+        const hIdx=headers.indexOf(h);
+        if(!headers.includes(nc)) headers.splice(hIdx+1,0,nc);
+      });
+      data.forEach(r=>delete r[h]);
+      headers=headers.filter(x=>x!==h);
+      S.features=S.features.filter(i=>S.headers[i]!==h);
+      rows.push(`<div class="running-row"><span class="running-key">${h}</span><span class="running-val">One-hot: ${uv.map(v=>`${h}_${v}`).join(', ')}</span></div>`);
+    }
+  });
+  S.processedData=data; S.headers=headers;
+  S.features=headers.map((_,i)=>i).filter(i=>i!==S.targetCol);
+  $('s2-enc-after').innerHTML=`<div class="info-box success"><div class="ib-icon">✅</div><div>Encoding applied. Columns updated.</div></div>${rows.join('')}`;
+  console.log('Encoding done. New headers:', headers);
+}
+
+function toggleScaling() {
+  $('s2-scaling-opts').style.display = $('scaling-enable').checked?'block':'none';
+}
+
+function applyScaling() {
+  const type = document.querySelector('input[name="scale-type"]:checked')?.value||'minmax';
+  const data = S.processedData;
+  const numCols = S.features.map(i=>S.headers[i]).filter(h=>colIsNumeric(h,data));
+  const stats=[];
+  numCols.forEach(h=>{
+    const vals=data.map(r=>r[h]);
+    const mn=Math.min(...vals), mx=Math.max(...vals), mu=mean(vals), sd=stddev(vals);
+    if(type==='minmax') {
+      const range=mx-mn||1;
+      data.forEach(r=>r[h]=parseFloat(((r[h]-mn)/range).toFixed(5)));
+      stats.push(`<div class="running-row"><span class="running-key">${h}</span><span class="running-val">MinMax: [${mn.toFixed(2)}, ${mx.toFixed(2)}] → [0, 1]</span></div>`);
+    } else {
+      data.forEach(r=>r[h]=parseFloat(((r[h]-mu)/(sd||1)).toFixed(5)));
+      stats.push(`<div class="running-row"><span class="running-key">${h}</span><span class="running-val">Z-score: μ=${mu.toFixed(2)}, σ=${sd.toFixed(2)}</span></div>`);
+    }
+  });
+  $('s2-scaling-after').innerHTML=`<div class="info-box success"><div class="ib-icon">✅</div><div>Scaling applied to ${numCols.length} numeric features.</div></div>${stats.join('')}`;
+  console.log('Scaling done.');
+}
+
+function renderS2Features() {
+  const feat = S.features;
+  let html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">';
+  feat.forEach(idx=>{
+    const h=S.headers[idx];
+    html+=`<div class="checkbox-row"><input type="checkbox" id="feat-${idx}" checked onchange="updateFeatCount()"><label for="feat-${idx}" style="font-family:var(--mono);font-size:12px">${h}</label></div>`;
+  });
+  html+='</div>';
+  $('s2-features-list').innerHTML=html;
+  updateFeatCount();
+}
+
+function updateFeatCount() {
+  const total=S.features.length;
+  const checked=S.features.filter(i=>document.getElementById('feat-'+i)?.checked).length;
+  $('s2-feat-count').textContent=`${checked} of ${total} features selected for training.`;
+}
+
+function confirmStage2() {
+  S.data = cloneData(S.processedData);
+  S.features = S.features.filter(i=>{
+    const el=document.getElementById('feat-'+i);
+    return el ? el.checked : true;
+  });
+  // Reclassify classes (target may have been re-encoded)
+  S.classes = uniqueVals(S.headers[S.targetCol], S.data);
+  advanceTo(3);
+}
+
+// ─────────────────────────────────────────
+// STAGE 3 — EDA
+// ─────────────────────────────────────────
+function initStage3() {
+  const b=$('body-3');
+  b.innerHTML=`
+    <div class="info-box"><div class="ib-icon">📊</div><div>Explore your data before training. Class distribution reveals imbalance, feature distributions show if Gaussian NB is appropriate, and the correlation heatmap checks the independence assumption.</div></div>
+    <div class="section"><div class="section-title">A — Class Distribution</div>
+      <div class="chart-wrap"><canvas id="ch-class"></canvas></div>
+    </div>
+    <div class="section"><div class="section-title">B — Feature Distribution</div>
+      <label class="label">Select feature to inspect</label>
+      <select class="select" id="feat-dist-sel" onchange="renderFeatDist()" style="max-width:300px;margin-bottom:12px"></select>
+      <div class="chart-wrap"><canvas id="ch-feat"></canvas></div>
+    </div>
+    <div class="section"><div class="section-title">C — Correlation Heatmap</div>
+      <div class="info-box tip"><div class="ib-icon">💡</div><div>High correlation between features may violate the naive independence assumption. Check before choosing Naive Bayes.</div></div>
+      <div id="heatmap-wrap" style="overflow-x:auto"></div>
+    </div>
+    <div style="margin-top:16px"><button class="btn btn-run" onclick="advanceTo(4)">Continue → NB Learning</button></div>
+  `;
+  renderClassDist();
+  renderFeatDistSelect();
+  renderHeatmap();
+}
+
+function colorArr(n) { return Array.from({length:n},(_,i)=>`hsl(${(i*360/n)},65%,55%)`); }
+function chartOpts() {
+  return {responsive:true,plugins:{legend:{labels:{color:'#d4d4e8',font:{size:12}}}},scales:{x:{ticks:{color:'#8888aa'},grid:{color:'#2a2a3d'}},y:{ticks:{color:'#8888aa'},grid:{color:'#2a2a3d'},beginAtZero:true}}};
+}
+
+function renderClassDist() {
+  destroyChart('cls');
+  const counts={}; S.classes.forEach(c=>counts[c]=0);
+  S.data.forEach(r=>{const v=r[S.headers[S.targetCol]]; if(v in counts) counts[v]++;});
+  const labels=Object.keys(counts), vals=Object.values(counts), total=vals.reduce((a,b)=>a+b,0);
+  const ctx=$('ch-class').getContext('2d');
+  S.charts.cls=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:colorArr(labels.length),borderRadius:6,borderSkipped:false}]},
+    options:{...chartOpts(),plugins:{...chartOpts().plugins,title:{display:true,text:'Class Distribution',color:'#d4d4e8'},tooltip:{callbacks:{label:c=>`${c.parsed.y} samples (${(c.parsed.y/total*100).toFixed(1)}%)`}}}}
+  });
+}
+
+function renderFeatDistSelect() {
+  const sel=$('feat-dist-sel');
+  sel.innerHTML=S.features.map(i=>`<option value="${i}">${S.headers[i]}</option>`).join('');
+  renderFeatDist();
+}
+
+function renderFeatDist() {
+  destroyChart('feat');
+  const sel=$('feat-dist-sel'); if(!sel||!sel.value) return;
+  const fIdx=parseInt(sel.value), fName=S.headers[fIdx];
+  const isN=colIsNumeric(fName,S.data);
+  const colors=colorArr(S.classes.length);
+  if(isN) {
+    const allVals=S.data.map(r=>r[fName]).filter(isNum);
+    const mn=Math.min(...allVals), mx=Math.max(...allVals), BINS=12;
+    const w=(mx-mn)/BINS;
+    const labels=Array.from({length:BINS},(_,i)=>(mn+i*w).toFixed(2));
+    const datasets=S.classes.map((cls,ci)=>{
+      const cvals=classRows(cls,S.data).map(r=>r[fName]).filter(isNum);
+      const counts=labels.map((_,i)=>cvals.filter(v=>v>=mn+i*w&&v<mn+(i+1)*w).length);
+      return {label:String(cls),data:counts,backgroundColor:colors[ci]+'aa',borderColor:colors[ci],borderWidth:1};
+    });
+    S.charts.feat=new Chart($('ch-feat').getContext('2d'),{type:'bar',data:{labels,datasets},options:{...chartOpts(),plugins:{...chartOpts().plugins,title:{display:true,text:`${fName} — Histogram by Class`,color:'#d4d4e8'}}}});
+  } else {
+    const uv=uniqueVals(fName,S.data);
+    const datasets=S.classes.map((cls,ci)=>{
+      const crows=classRows(cls,S.data);
+      return {label:String(cls),data:uv.map(v=>crows.filter(r=>r[fName]===v).length),backgroundColor:colors[ci]+'aa',borderColor:colors[ci],borderWidth:1};
+    });
+    S.charts.feat=new Chart($('ch-feat').getContext('2d'),{type:'bar',data:{labels:uv.map(String),datasets},options:{...chartOpts(),plugins:{...chartOpts().plugins,title:{display:true,text:`${fName} — Counts by Class`,color:'#d4d4e8'}}}});
+  }
+}
+
+function pearson(x,y) {
+  const n=x.length, mx=mean(x), my=mean(y);
+  const num=x.reduce((s,xi,i)=>s+(xi-mx)*(y[i]-my),0);
+  const denom=Math.sqrt(x.reduce((s,xi)=>s+(xi-mx)**2,0)*y.reduce((s,yi)=>s+(yi-my)**2,0));
+  return denom===0?0:num/denom;
+}
+
+function renderHeatmap() {
+  const numF=S.features.filter(i=>colIsNumeric(S.headers[i],S.data));
+  if(numF.length<2){$('heatmap-wrap').innerHTML='<div class="info-box"><div class="ib-icon">ℹ️</div><div>Need at least 2 numeric features for correlation heatmap.</div></div>';return;}
+  const names=numF.map(i=>S.headers[i]);
+  const mat=names.map(a=>names.map(b=>{
+    const xa=S.data.map(r=>r[a]).filter(isNum), xb=S.data.map(r=>r[b]).filter(isNum);
+    return +pearson(xa,xb).toFixed(2);
+  }));
+  const size=Math.max(50,Math.min(80,360/names.length));
+  let html=`<div style="display:inline-block">`;
+  // Header row
+  html+=`<div style="display:flex"><div style="width:${size}px"></div>`;
+  names.forEach(n=>html+=`<div style="width:${size}px;text-align:center;font-size:10px;color:var(--text2);padding:4px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${n}">${n}</div>`);
+  html+='</div>';
+  mat.forEach((row,i)=>{
+    html+=`<div style="display:flex;align-items:center">`;
+    html+=`<div style="width:${size}px;font-size:10px;color:var(--text2);padding:2px 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${names[i]}">${names[i]}</div>`;
+    row.forEach(v=>{
+      const abs=Math.abs(v), r=v>0?200:50, g=v>0?50:50, bl=v<0?200:50;
+      const bg=v===1?'var(--accent)':v===0?'var(--card2)':`rgba(${r},${g},${bl},${abs*0.8})`;
+      const tc=abs>0.4?'#fff':'var(--text2)';
+      html+=`<div style="width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;border-radius:4px;margin:1px;background:${bg};color:${tc};font-family:var(--mono);font-size:11px;cursor:default" title="${names[i]} × ? = ${v}">${v}</div>`;
+    });
+    html+='</div>';
+  });
+  html+='</div>';
+  $('heatmap-wrap').innerHTML=html;
+}
+
+// ─────────────────────────────────────────
+// STAGE 4 — NB LEARNING MODULE
+// ─────────────────────────────────────────
+function initStage4() {
+  const b=$('body-4');
+  b.innerHTML=`
+    <div class="info-box"><div class="ib-icon">🧮</div><div>This is the mathematical core of Naive Bayes. Work through each step to understand exactly how the algorithm learns from your data.</div></div>
+
+    <div class="section"><div class="section-title">NB Type</div>
+      <div class="toggle-group">
+        <button class="toggle-btn on" id="btn-gauss" onclick="setNBType('gaussian')">Gaussian NB</button>
+        <button class="toggle-btn" id="btn-multi" onclick="setNBType('multinomial')">Multinomial NB</button>
+      </div>
+      <div id="nb-type-note" style="margin-top:8px"></div>
+    </div>
+
+    <div class="section"><div class="section-title">Step 1 — Prior Probabilities</div>
+      <div class="formula"><span class="kw">P(C)</span> = count(C) / total_samples</div>
+      <div id="s4-priors"></div>
+      <div class="chart-wrap" style="margin-top:12px"><canvas id="ch-priors"></canvas></div>
+    </div>
+
+    <div class="section"><div class="section-title">Step 2 — Likelihood Estimation</div>
+      <div id="s4-likelihood"></div>
+    </div>
+
+    <div class="section"><div class="section-title">Step 3 — Naive Independence Assumption</div>
+      <div class="info-box tip"><div class="ib-icon">🧠</div><div>
+        <strong>The key assumption:</strong><br>
+        <code style="color:var(--accent)">P(X|C) = P(x₁|C) × P(x₂|C) × ... × P(xₙ|C)</code><br><br>
+        This assumes every feature contributes <em>independently</em> to the prediction. It's called "naive" because real features are rarely truly independent. Despite this, NB often works remarkably well.
+      </div></div>
+    </div>
+
+    <div class="section"><div class="section-title">Step 4 — Posterior Probability Walkthrough</div>
+      <div class="info-box warn"><div class="ib-icon">📖</div><div>Full computation for the <strong>first test sample</strong> in your dataset. See every number, step by step.</div></div>
+      <div id="s4-walkthrough"></div>
+    </div>
+
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="advanceTo(5)">Configure Training →</button>
+      <button class="btn btn-secondary" onclick="advanceTo(7)">Skip to Prediction →</button>
+    </div>
+  `;
+  setNBType(S.nbType);
+  renderS4Priors();
+  renderS4Likelihood();
+  renderS4Walkthrough();
+}
+
+function setNBType(type) {
+  S.nbType=type;
+  $('btn-gauss').className='toggle-btn'+(type==='gaussian'?' on':'');
+  $('btn-multi').className='toggle-btn'+(type==='multinomial'?' on':'');
+  const note = $('nb-type-note');
+  if(note) note.innerHTML = type==='gaussian'
+    ? '<div class="info-box"><div class="ib-icon">📐</div><div>Gaussian NB assumes each feature follows a normal distribution within each class. Best for <strong>continuous numeric</strong> features.</div></div>'
+    : '<div class="info-box"><div class="ib-icon">📝</div><div>Multinomial NB uses frequency counts. Best for <strong>discrete / count</strong> features. Uses Laplace smoothing to avoid zero probabilities.</div></div>';
+  if($('s4-likelihood')) { renderS4Likelihood(); renderS4Walkthrough(); }
+}
+
+function renderS4Priors() {
+  const total=S.data.length;
+  const colors=colorArr(S.classes.length);
+  let rows=S.classes.map((cls,i)=>{
+    const cnt=classRows(cls,S.data).length, p=(cnt/total);
+    return `<tr><td>${cls}</td><td>${cnt}</td><td><code>${p.toFixed(4)}</code></td><td>log = <code style="color:var(--blue)">${Math.log(p).toFixed(4)}</code></td></tr>`;
+  }).join('');
+  $('s4-priors').innerHTML=`<table class="nb-table"><thead><tr><th>Class</th><th>Count</th><th>P(C)</th><th>log P(C)</th></tr></thead><tbody>${rows}</tbody></table>`;
+  destroyChart('priors');
+  const labels=S.classes.map(String), vals=labels.map(c=>classRows(c,S.data).length);
+  S.charts.priors=new Chart($('ch-priors').getContext('2d'),{
+    type:'bar',
+    data:{labels,datasets:[{data:vals,backgroundColor:colors,borderRadius:6,borderSkipped:false}]},
+    options:{...chartOpts(),indexAxis:'y',plugins:{...chartOpts().plugins,legend:{display:false},title:{display:true,text:'Prior Probabilities (class counts)',color:'#d4d4e8'}}}
+  });
+}
+
+function renderS4Likelihood() {
+  const el=$('s4-likelihood'); if(!el) return;
+  const data=S.data;
+  if(S.nbType==='gaussian') {
+    el.innerHTML=`<div class="formula"><span class="kw">P(xᵢ|C)</span> = <span class="val">(1/√(2πσ²))</span> × exp(−(x−μ)²/2σ²)</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <label class="label" style="margin:0">Feature:</label>
+      <select class="select" id="gauss-feat-sel" style="width:auto" onchange="renderGaussChart()"></select>
+    </div>
+    <div id="gauss-table"></div>
+    <div class="chart-wrap" style="margin-top:12px"><canvas id="ch-gauss"></canvas></div>`;
+    const sel=$('gauss-feat-sel');
+    sel.innerHTML=S.features.map(i=>`<option value="${i}">${S.headers[i]}</option>`).join('');
+    renderGaussTable();
+    renderGaussChart();
+  } else {
+    el.innerHTML=`<div class="formula"><span class="kw">P(xᵢ=v|C)</span> = (<span class="val">count(xᵢ=v,C) + 1</span>) / (<span class="val">|C| + k</span>)<br><span class="comment">// Laplace smoothing prevents zero-probabilities</span></div>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+      <label class="label" style="margin:0">Feature:</label>
+      <select class="select" id="multi-feat-sel" style="width:auto" onchange="renderMultiTable()"></select>
+    </div>
+    <div id="multi-table"></div>`;
+    $('multi-feat-sel').innerHTML=S.features.map(i=>`<option value="${i}">${S.headers[i]}</option>`).join('');
+    renderMultiTable();
+  }
+}
+
+function renderGaussTable() {
+  const data=S.data;
+  let rows='';
+  S.features.forEach(fIdx=>{
+    const h=S.headers[fIdx];
+    S.classes.forEach(cls=>{
+      const vals=classRows(cls,data).map(r=>r[h]).filter(isNum);
+      if(!vals.length) return;
+      const mu=mean(vals), sig2=variance(vals);
+      rows+=`<tr><td><code>${h}</code></td><td>${cls}</td><td><code>${mu.toFixed(4)}</code></td><td><code>${sig2.toFixed(4)}</code></td><td><code>${Math.sqrt(sig2).toFixed(4)}</code></td></tr>`;
+    });
+  });
+  const el=$('gauss-table'); if(el) el.innerHTML=`<div style="overflow-x:auto"><table class="nb-table"><thead><tr><th>Feature</th><th>Class</th><th>μ (mean)</th><th>σ² (variance)</th><th>σ (std)</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
+function renderGaussChart() {
+  destroyChart('gauss');
+  const sel=$('gauss-feat-sel'); if(!sel) return;
+  const fIdx=parseInt(sel.value), fName=S.headers[fIdx];
+  const data=S.data, colors=colorArr(S.classes.length);
+  const allVals=data.map(r=>r[fName]).filter(isNum);
+  if(!allVals.length) return;
+  const params=S.classes.map(cls=>{
+    const v=classRows(cls,data).map(r=>r[fName]).filter(isNum);
+    return {cls,mu:mean(v),sig2:variance(v)};
+  });
+  const allMu=params.map(p=>p.mu), allSig=params.map(p=>Math.sqrt(p.sig2));
+  const xMin=Math.min(...allMu.map((m,i)=>m-3*allSig[i]));
+  const xMax=Math.max(...allMu.map((m,i)=>m+3*allSig[i]));
+  const xPts=Array.from({length:120},(_,i)=>xMin+(xMax-xMin)*i/119);
+  const datasets=params.map(({cls,mu,sig2},ci)=>({
+    label:String(cls),
+    data:xPts.map(x=>({x,y:gaussianPDF(x,mu,sig2)})),
+    borderColor:colors[ci],backgroundColor:colors[ci]+'22',fill:true,tension:0.4,pointRadius:0,borderWidth:2
+  }));
+  S.charts.gauss=new Chart($('ch-gauss').getContext('2d'),{
+    type:'line',
+    data:{datasets},
+    options:{...chartOpts(),parsing:false,plugins:{...chartOpts().plugins,title:{display:true,text:`P(${fName} | class) — Gaussian PDF`,color:'#d4d4e8'}},scales:{x:{type:'linear',ticks:{color:'#8888aa'},grid:{color:'#2a2a3d'}},y:{ticks:{color:'#8888aa'},grid:{color:'#2a2a3d'}}}}
+  });
+}
+
+function renderMultiTable() {
+  const sel=$('multi-feat-sel'); if(!sel) return;
+  const fIdx=parseInt(sel.value), fName=S.headers[fIdx];
+  const uv=uniqueVals(fName,S.data), k=uv.length;
+  let hdrs=`<th>Value</th>${S.classes.map(c=>`<th>${c}<br><small style="color:var(--text2)">raw | smoothed</small></th>`).join('')}`;
+  let rows=uv.map(v=>{
+    let cells=S.classes.map(cls=>{
+      const cr=classRows(cls,S.data), raw=cr.filter(r=>r[fName]===v).length;
+      const sm=(raw+1)/(cr.length+k);
+      const isZero=raw===0;
+      return `<td class="${isZero?'cell-warn':''}">${raw} | <code style="color:var(--${isZero?'accent':'green'})">${sm.toFixed(4)}</code></td>`;
+    }).join('');
+    return `<tr><td><code>${v}</code></td>${cells}</tr>`;
+  }).join('');
+  const el=$('multi-table'); if(el) el.innerHTML=`<div style="overflow-x:auto"><table class="nb-table"><thead><tr>${hdrs}</tr></thead><tbody>${rows}</tbody></table></div><div class="info-box warn" style="margin-top:8px"><div class="ib-icon">⚠️</div><div>Highlighted cells had raw count = 0. Laplace smoothing (add 1) prevents zero-probability. k = ${k} unique values.</div></div>`;
+}
+
+function renderS4Walkthrough() {
+  const el=$('s4-walkthrough'); if(!el) return;
+  const sample=S.data[0]; if(!sample) { el.innerHTML='<div class="empty-state"><div class="es-icon">🔍</div><p>No data available.</p></div>'; return; }
+  const fVals=S.features.map(i=>sample[S.headers[i]]);
+  const total=S.data.length;
+  let html=`<div style="background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;font-family:var(--mono);font-size:12px"><strong>Sample[0]:</strong> ${S.features.map((i,j)=>`${S.headers[i]}=${fVals[j]}`).join(', ')}<br><strong>Actual class:</strong> ${sample[S.headers[S.targetCol]]}</div>`;
+  const scores={};
+  S.classes.forEach((cls,ci)=>{
+    const prior=classRows(cls,S.data).length/total;
+    scores[cls]=Math.log(prior);
+    html+=`<div class="wt-class">`;
+    html+=`<div class="wt-class-title">▸ Class: <strong>${cls}</strong></div>`;
+    html+=`<div class="wt-row"><span class="wt-feat">Prior</span><span class="wt-formula">log P(${cls}) = log(${prior.toFixed(4)})</span><span class="wt-logval">${scores[cls].toFixed(4)}</span></div>`;
+    S.features.forEach((fIdx,j)=>{
+      const h=S.headers[fIdx], val=fVals[j];
+      let logL=0, formula='';
+      if(S.nbType==='gaussian') {
+        const vals=classRows(cls,S.data).map(r=>r[h]).filter(isNum);
+        if(vals.length) { const mu=mean(vals), sig2=variance(vals); logL=logGaussianPDF(val,mu,sig2); formula=`log PDF(${val}, μ=${mu.toFixed(2)}, σ²=${sig2.toFixed(2)})`; }
+      } else {
+        const cr=classRows(cls,S.data), uv=uniqueVals(h,S.data), k=uv.length;
+        const raw=cr.filter(r=>r[h]===val).length, sm=(raw+1)/(cr.length+k);
+        logL=Math.log(sm); formula=`log((${raw}+1)/(${cr.length}+${k}))`;
+      }
+      scores[cls]+=logL;
+      html+=`<div class="wt-row"><span class="wt-feat">${h} = ${val}</span><span class="wt-formula">${formula}</span><span class="wt-logval">${logL.toFixed(4)}</span></div>`;
+    });
+    html+=`<div class="wt-total"><span class="wt-total-label">Total log-score for ${cls}</span><span class="wt-total-val">${scores[cls].toFixed(4)}</span></div>`;
+    html+='</div>';
+  });
+  const winner=Object.keys(scores).reduce((a,b)=>scores[a]>scores[b]?a:b);
+  const probs=softmax(scores);
+  let tableRows=S.classes.map(c=>`<tr ${c===winner?'style="background:var(--green-dim)"':''}><td>${c}</td><td>${scores[c].toFixed(4)}</td><td>${(probs[c]*100).toFixed(2)}%</td><td>${c===winner?'✅ Winner':''}</td></tr>`).join('');
+  html+=`<table class="nb-table" style="margin-top:12px"><thead><tr><th>Class</th><th>Log-Score</th><th>Probability</th><th>Result</th></tr></thead><tbody>${tableRows}</tbody></table>`;
+  html+=`<div class="winner-card"><div class="winner-label">Predicted Class</div><div class="winner-class">${winner}</div><div class="winner-prob">Confidence: ${(probs[winner]*100).toFixed(1)}% | Actual: ${sample[S.headers[S.targetCol]]}</div></div>`;
+  el.innerHTML=html;
+}
+
+// ─────────────────────────────────────────
+// STAGE 5 — TRAINING CONFIG
+// ─────────────────────────────────────────
+function initStage5() {
+  const b=$('body-5');
+  b.innerHTML=`
+    <div class="info-box"><div class="ib-icon">⚙️</div><div>Configure how the model is trained. The split ratio controls how much data is used for training vs testing. Cross-validation gives a more reliable accuracy estimate.</div></div>
+    <div class="section"><div class="section-title">Train / Test Split</div>
+      <div style="max-width:400px">
+        <label class="label">Train ratio: <strong id="split-label">80%</strong></label>
+        <input type="range" class="range-input" id="split-slider" min="50" max="90" step="5" value="80" oninput="updateSplit()">
+        <div id="split-stats" style="margin-top:10px;font-size:13px"></div>
+      </div>
+    </div>
+    <div class="section"><div class="section-title">Cross Validation</div>
+      <div class="checkbox-row"><input type="checkbox" id="cv-enable" onchange="toggleCV()"><label for="cv-enable">Enable k-fold Cross Validation</label></div>
+      <div id="cv-opts" style="display:none;margin-top:10px;max-width:400px">
+        <label class="label">k (number of folds)</label>
+        <input type="number" class="input" id="k-val" min="2" max="10" value="5" style="max-width:120px" oninput="S.kValue=parseInt(this.value)">
+        <div class="info-box" style="margin-top:10px"><div class="ib-icon">📐</div><div>k-fold splits the training data into k equal parts. The model trains k times — each time testing on a different fold. Final score = average of k accuracies. This is more reliable than a single split.</div></div>
+      </div>
+    </div>
+    <button class="btn btn-run" style="margin-top:8px" onclick="runTraining()">▶ Train Model</button>
+    <div id="s5-training-log" style="margin-top:14px"></div>
+  `;
+  updateSplit();
+}
+
+function updateSplit() {
+  const v=parseInt($('split-slider')?.value||80);
+  S.splitRatio=v/100;
+  if($('split-label')) $('split-label').textContent=v+'%';
+  const total=S.data.length, tr=Math.floor(total*S.splitRatio), te=total-tr;
+  if($('split-stats')) $('split-stats').innerHTML=`<div class="grid-3"><div class="stat-card"><div class="stat-label">Training</div><div class="stat-val accent">${tr}</div></div><div class="stat-card"><div class="stat-label">Testing</div><div class="stat-val">${te}</div></div><div class="stat-card"><div class="stat-label">Total</div><div class="stat-val">${total}</div></div></div>`;
+}
+
+function toggleCV() { $('cv-opts').style.display=$('cv-enable').checked?'block':'none'; S.kFold=$('cv-enable').checked; }
+
+function runTraining() {
+  $('s5-training-log').innerHTML='<div class="info-box"><div class="ib-icon">⏳</div><div>Training...</div></div>';
+  // Shuffle
+  const shuffled=[...S.data];
+  for(let i=shuffled.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];}
+  S.data=[...shuffled];
+  const sp=Math.floor(S.data.length*S.splitRatio);
+  S.trainData=S.data.slice(0,sp); S.testData=S.data.slice(sp);
+  trainNaiveBayes(S.trainData);
+  console.log('Training done. Model:', S.model);
+  $('s5-training-log').innerHTML=`<div class="info-box success"><div class="ib-icon">✅</div><div>Model trained on <strong>${S.trainData.length}</strong> samples. Test set: <strong>${S.testData.length}</strong> samples.</div></div>`;
+  setTimeout(()=>advanceTo(6), 600);
+}
+
+function trainNaiveBayes(trainData) {
+  const total=trainData.length;
+  const priors={}, likelihoods={};
+  S.classes.forEach(cls=>{ priors[cls]=classRows(cls,trainData).length/total; });
+  if(S.nbType==='gaussian') {
+    S.features.forEach(fIdx=>{
+      const h=S.headers[fIdx]; likelihoods[h]={};
+      S.classes.forEach(cls=>{
+        const vals=classRows(cls,trainData).map(r=>r[h]).filter(isNum);
+        likelihoods[h][cls]={mu:vals.length?mean(vals):0, sig2:vals.length>1?variance(vals):1e-6};
+      });
+    });
+  } else {
+    S.features.forEach(fIdx=>{
+      const h=S.headers[fIdx]; likelihoods[h]={};
+      const uv=uniqueVals(h,trainData), k=uv.length;
+      S.classes.forEach(cls=>{
+        const cr=classRows(cls,trainData); likelihoods[h][cls]={k,classTotal:cr.length,counts:{}};
+        uv.forEach(v=>likelihoods[h][cls].counts[v]=(cr.filter(r=>r[h]===v).length));
+      });
+    });
+  }
+  S.model={priors,likelihoods,nbType:S.nbType};
+}
+
+function predictSample(vals, model=S.model) {
+  if(!model) return null;
+  const scores={};
+  S.classes.forEach(cls=>{ scores[cls]=Math.log(model.priors[cls]||1e-10); });
+  S.features.forEach((fIdx,j)=>{
+    const h=S.headers[fIdx], val=vals[j];
+    S.classes.forEach(cls=>{
+      if(!model.likelihoods[h]||!model.likelihoods[h][cls]) return;
+      if(model.nbType==='gaussian') {
+        const {mu,sig2}=model.likelihoods[h][cls];
+        scores[cls]+=logGaussianPDF(val,mu,sig2);
+      } else {
+        const {k,classTotal,counts}=model.likelihoods[h][cls];
+        const raw=counts[val]||0;
+        scores[cls]+=Math.log((raw+1)/(classTotal+k));
+      }
+    });
+  });
+  const probs=softmax(scores);
+  const pred=Object.keys(scores).reduce((a,b)=>scores[a]>scores[b]?a:b);
+  return {predictedClass:pred, scores, probabilities:probs};
+}
+
+// ─────────────────────────────────────────
+// STAGE 6 — MODEL VISUALIZATION
+// ─────────────────────────────────────────
+function initStage6() {
+  if(!S.model) { $('body-6').innerHTML='<div class="info-box warn"><div class="ib-icon">⚠️</div><div>Please complete Stage 5 (Training) first.</div></div>'; return; }
+  const b=$('body-6');
+  b.innerHTML=`
+    <div class="section"><div class="section-title">Training Summary</div>
+      <div class="grid-3">
+        <div class="stat-card"><div class="stat-label">NB Type</div><div class="stat-val accent" style="font-size:16px">${S.model.nbType}</div></div>
+        <div class="stat-card"><div class="stat-label">Train Samples</div><div class="stat-val">${S.trainData.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Test Samples</div><div class="stat-val">${S.testData.length}</div></div>
+      </div>
+    </div>
+    <div class="section"><div class="section-title">Learned Parameters</div>
+      <div id="s6-params"></div>
+    </div>
+    <div class="section"><div class="section-title">Class Distributions (Trained)</div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+        <label class="label" style="margin:0">Feature:</label>
+        <select class="select" id="s6-feat-sel" style="width:auto" onchange="renderS6Chart()"></select>
+      </div>
+      <div class="chart-wrap"><canvas id="ch-s6"></canvas></div>
+    </div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+      <button class="btn btn-run" onclick="advanceTo(7)">Test Prediction →</button>
+      <button class="btn btn-secondary" onclick="advanceTo(8)">See Evaluation →</button>
+    </div>
+  `;
+  renderS6Params();
+  const sel=$('s6-feat-sel');
+  sel.innerHTML=S.features.map(i=>`<option value="${i}">${S.headers[i]}</option>`).join('');
+  renderS6Chart();
+}
+
+function renderS6Params() {
+  const el=$('s6-params'); if(!el||!S.model) return;
+  if(S.model.nbType==='gaussian') {
+    let hdrs=`<th>Feature</th>${S.classes.map(c=>`<th>${c} (μ / σ²)</th>`).join('')}`;
+    let rows=S.features.map(fIdx=>{
+      const h=S.headers[fIdx];
+      return `<tr><td><code>${h}</code></td>${S.classes.map(cls=>{const p=S.model.likelihoods[h]?.[cls]; return p?`<td>${p.mu.toFixed(4)} / ${p.sig2.toFixed(4)}</td>`:'<td>—</td>';}).join('')}</tr>`;
+    }).join('');
+    el.innerHTML=`<div style="overflow-x:auto"><table class="nb-table"><thead><tr>${hdrs}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  } else {
+    let html='';
+    S.features.forEach(fIdx=>{
+      const h=S.headers[fIdx];
+      const allVals=new Set(S.classes.flatMap(cls=>Object.keys(S.model.likelihoods[h]?.[cls]?.counts||{})));
+      let hdrs=`<th>${h}</th>${S.classes.map(c=>`<th>${c}</th>`).join('')}`;
+      let rows=[...allVals].map(v=>{
+        return `<tr><td><code>${v}</code></td>${S.classes.map(cls=>{
+          const L=S.model.likelihoods[h]?.[cls]; if(!L) return '<td>—</td>';
+          const raw=L.counts[v]||0, sm=(raw+1)/(L.classTotal+L.k);
+          return `<td class="${raw===0?'cell-warn':''}">${sm.toFixed(4)}</td>`;
+        }).join('')}</tr>`;
+      }).join('');
+      html+=`<div style="overflow-x:auto;margin-bottom:12px"><table class="nb-table"><thead><tr>${hdrs}</tr></thead><tbody>${rows}</tbody></table></div>`;
+    });
+    el.innerHTML=html;
+  }
+}
+
+function renderS6Chart() {
+  destroyChart('s6');
+  const sel=$('s6-feat-sel'); if(!sel||!S.model) return;
+  const fIdx=parseInt(sel.value), h=S.headers[fIdx];
+  const colors=colorArr(S.classes.length);
+  if(S.model.nbType==='gaussian') {
+    const params=S.classes.map(cls=>({cls,...(S.model.likelihoods[h]?.[cls]||{mu:0,sig2:1})}));
+    const allMu=params.map(p=>p.mu), allSig=params.map(p=>Math.sqrt(p.sig2));
+    const xMin=Math.min(...allMu.map((m,i)=>m-3*allSig[i]));
+    const xMax=Math.max(...allMu.map((m,i)=>m+3*allSig[i]));
+    const xPts=Array.from({length:100},(_,i)=>xMin+(xMax-xMin)*i/99);
+    const datasets=params.map(({cls,mu,sig2},ci)=>({
+      label:String(cls),data:xPts.map(x=>({x,y:gaussianPDF(x,mu,sig2)})),
+      borderColor:colors[ci],backgroundColor:colors[ci]+'22',fill:true,tension:0.4,pointRadius:0,borderWidth:2
+    }));
+    S.charts.s6=new Chart($('ch-s6').getContext('2d'),{type:'line',data:{datasets},options:{...chartOpts(),parsing:false,plugins:{...chartOpts().plugins,title:{display:true,text:`Learned P(${h}|class)`,color:'#d4d4e8'}},scales:{x:{type:'linear',ticks:{color:'#8888aa'},grid:{color:'#2a2a3d'}},y:{ticks:{color:'#8888aa'},grid:{color:'#2a2a3d'}}}}});
+  } else {
+    const L=S.model.likelihoods[h];
+    if(!L) return;
+    const allVals=[...new Set(S.classes.flatMap(cls=>Object.keys(L[cls]?.counts||{})))];
+    const datasets=S.classes.map((cls,ci)=>({
+      label:String(cls),
+      data:allVals.map(v=>{const d=L[cls]; return d?((d.counts[v]||0)+1)/(d.classTotal+d.k):0;}),
+      backgroundColor:colors[ci]+'aa',borderColor:colors[ci],borderWidth:1,borderRadius:4
+    }));
+    S.charts.s6=new Chart($('ch-s6').getContext('2d'),{type:'bar',data:{labels:allVals.map(String),datasets},options:{...chartOpts(),plugins:{...chartOpts().plugins,title:{display:true,text:`P(${h}=value|class)`,color:'#d4d4e8'}}}});
+  }
+}
+
+// ─────────────────────────────────────────
+// STAGE 7 — PREDICTION
+// ─────────────────────────────────────────
+function initStage7() {
+  if(!S.model) { $('body-7').innerHTML='<div class="info-box warn"><div class="ib-icon">⚠️</div><div>Please train the model first (Stage 5).</div></div>'; return; }
+  const b=$('body-7');
+  let formRows=S.features.map(fIdx=>{
+    const h=S.headers[fIdx], isN=colIsNumeric(h,S.trainData);
+    const uv=uniqueVals(h,S.trainData);
+    const inp = isN
+      ? `<input type="number" class="input" id="inp-${fIdx}" step="any" placeholder="${h}" value="${(S.trainData[0]?.[h]??'')}">`
+      : `<select class="select" id="inp-${fIdx}">${uv.map(v=>`<option value="${v}">${v}</option>`).join('')}</select>`;
+    return `<div><label class="label">${h}</label>${inp}</div>`;
+  }).join('');
+  b.innerHTML=`
+    <div class="info-box"><div class="ib-icon">🔮</div><div>Enter feature values and see Naive Bayes compute the prediction step by step.</div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px">${formRows}</div>
+    <button class="btn btn-run" onclick="runPredict()">▶ Predict</button>
+    <div id="s7-result" style="margin-top:16px"></div>
+    <div style="margin-top:16px"><button class="btn btn-secondary" onclick="advanceTo(8)">See Evaluation →</button></div>
+  `;
+}
+
+function runPredict() {
+  const vals=S.features.map(fIdx=>{
+    const h=S.headers[fIdx], el=$('inp-'+fIdx); if(!el) return 0;
+    return colIsNumeric(h,S.trainData)?parseFloat(el.value)||0:el.value;
+  });
+  const result=predictSample(vals);
+  if(!result) return;
+  const total=S.data.length;
+  let html='';
+  // Walkthrough per class
+  S.classes.forEach(cls=>{
+    let logScore=Math.log(S.model.priors[cls]||1e-10);
+    html+=`<div class="wt-class"><div class="wt-class-title">▸ Class: <strong>${cls}</strong></div>`;
+    html+=`<div class="wt-row"><span class="wt-feat">Prior</span><span class="wt-formula">log P(${cls}) = log(${(S.model.priors[cls]||0).toFixed(4)})</span><span class="wt-logval">${logScore.toFixed(4)}</span></div>`;
+    S.features.forEach((fIdx,j)=>{
+      const h=S.headers[fIdx], val=vals[j];
+      let logL=0, formula='';
+      if(S.model.nbType==='gaussian') {
+        const p=S.model.likelihoods[h]?.[cls]||{mu:0,sig2:1};
+        logL=logGaussianPDF(val,p.mu,p.sig2);
+        formula=`logPDF(${val}, μ=${p.mu.toFixed(2)}, σ²=${p.sig2.toFixed(2)})`;
+      } else {
+        const L=S.model.likelihoods[h]?.[cls]||{k:1,classTotal:1,counts:{}};
+        const raw=L.counts[val]||0, sm=(raw+1)/(L.classTotal+L.k);
+        logL=Math.log(sm); formula=`log((${raw}+1)/(${L.classTotal}+${L.k}))`;
+      }
+      logScore+=logL;
+      html+=`<div class="wt-row"><span class="wt-feat">${h}=${val}</span><span class="wt-formula">${formula}</span><span class="wt-logval">${logL.toFixed(4)}</span></div>`;
+    });
+    html+=`<div class="wt-total"><span class="wt-total-label">Log-score</span><span class="wt-total-val">${result.scores[cls].toFixed(4)}</span></div></div>`;
+  });
+  // Table + winner
+  let trows=S.classes.map(c=>`<tr ${c===result.predictedClass?'style="background:var(--green-dim)"':''}><td>${c}</td><td><code>${result.scores[c].toFixed(4)}</code></td><td><strong>${(result.probabilities[c]*100).toFixed(2)}%</strong></td><td>${c===result.predictedClass?'✅':''}</td></tr>`).join('');
+  html+=`<table class="nb-table" style="margin:12px 0"><thead><tr><th>Class</th><th>Log-Score</th><th>Probability</th><th></th></tr></thead><tbody>${trows}</tbody></table>`;
+  html+=`<div class="winner-card"><div class="winner-label">Prediction</div><div class="winner-class">${result.predictedClass}</div><div class="winner-prob">Confidence: ${(result.probabilities[result.predictedClass]*100).toFixed(1)}%</div></div>`;
+  // Doughnut
+  html+=`<div class="chart-wrap" style="margin-top:12px;max-width:300px"><canvas id="ch-pred"></canvas></div>`;
+  $('s7-result').innerHTML=html;
+  destroyChart('pred');
+  const colors=colorArr(S.classes.length);
+  S.charts.pred=new Chart($('ch-pred').getContext('2d'),{
+    type:'doughnut',
+    data:{labels:S.classes.map(String),datasets:[{data:S.classes.map(c=>+(result.probabilities[c]*100).toFixed(2)),backgroundColor:colors,borderWidth:0}]},
+    options:{responsive:true,plugins:{legend:{labels:{color:'#d4d4e8',font:{size:12}}},tooltip:{callbacks:{label:c=>`${c.label}: ${c.parsed.toFixed(2)}%`}}}}
+  });
+}
+
+// ─────────────────────────────────────────
+// STAGE 8 — EVALUATION
+// ─────────────────────────────────────────
+function initStage8() {
+  if(!S.model) { $('body-8').innerHTML='<div class="info-box warn"><div class="ib-icon">⚠️</div><div>Please train the model (Stage 5) first.</div></div>'; return; }
+  const b=$('body-8');
+  b.innerHTML=`
+    <div class="info-box"><div class="ib-icon">📈</div><div>Running predictions on <strong>${S.testData.length}</strong> test samples...</div></div>
+    <div id="s8-cm"></div>
+    <div id="s8-metrics"></div>
+    <div id="s8-cv"></div>
+    <div style="margin-top:16px"><button class="btn btn-run" onclick="advanceTo(9)">Finish →</button></div>
+  `;
+  // Run all test predictions
+  S.predictions=S.testData.map(row=>{
+    const vals=S.features.map(fIdx=>row[S.headers[fIdx]]);
+    const res=predictSample(vals);
+    return {actual:row[S.headers[S.targetCol]], predicted:res?.predictedClass};
+  });
+  renderConfusionMatrix();
+  renderMetrics();
+  if(S.kFold) runKFold();
+}
+
+function renderConfusionMatrix() {
+  const cm={}; S.classes.forEach(a=>{cm[a]={};S.classes.forEach(p=>cm[a][p]=0);});
+  S.predictions.forEach(({actual,predicted})=>{if(cm[actual]!==undefined&&predicted!==undefined)cm[actual][predicted]=(cm[actual][predicted]||0)+1;});
+  let th=S.classes.map(c=>`<th>Pred: ${c}</th>`).join('');
+  let rows=S.classes.map(a=>`<tr><td><strong>Act: ${a}</strong></td>${S.classes.map(p=>{
+    const v=cm[a][p]||0, isD=a===p;
+    return `<td class="${isD?'cell-good':'cell-bad'}" style="text-align:center" title="${v} times predicted ${p} when actual was ${a}"><strong>${v}</strong></td>`;
+  }).join('')}</tr>`).join('');
+  $('s8-cm').innerHTML=`<div class="section"><div class="section-title">Confusion Matrix</div><div style="overflow-x:auto"><table class="nb-table"><thead><tr><th></th>${th}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  S._cm=cm;
+}
+
+function renderMetrics() {
+  const cm=S._cm, total=S.predictions.length;
+  let correct=0;
+  const perClass=S.classes.map(cls=>{
+    const TP=cm[cls]?.[cls]||0;
+    const FP=S.classes.reduce((s,a)=>s+(a!==cls?cm[a]?.[cls]||0:0),0);
+    const FN=S.classes.reduce((s,p)=>s+(p!==cls?cm[cls]?.[p]||0:0),0);
+    const TN=total-TP-FP-FN;
+    const P=TP/(TP+FP)||0, R=TP/(TP+FN)||0;
+    correct+=TP;
+    return {cls,TP,FP,FN,TN,P,R,F1:2*P*R/(P+R)||0};
+  });
+  const acc=correct/total;
+  const macroP=mean(perClass.map(m=>m.P)), macroR=mean(perClass.map(m=>m.R)), macroF1=mean(perClass.map(m=>m.F1));
+  let rows=perClass.map(m=>`<tr><td>${m.cls}</td><td>${m.TP}</td><td>${m.FP}</td><td>${m.FN}</td><td>${m.TN}</td><td><span class="metric-badge mb-prec">${(m.P*100).toFixed(1)}%</span></td><td><span class="metric-badge mb-rec">${(m.R*100).toFixed(1)}%</span></td><td><span class="metric-badge mb-f1">${(m.F1).toFixed(3)}</span></td></tr>`).join('');
+  rows+=`<tr style="background:var(--card2)"><td colspan="5"><strong>Macro Average</strong></td><td><span class="metric-badge mb-prec">${(macroP*100).toFixed(1)}%</span></td><td><span class="metric-badge mb-rec">${(macroR*100).toFixed(1)}%</span></td><td><span class="metric-badge mb-f1">${macroF1.toFixed(3)}</span></td></tr>`;
+  $('s8-metrics').innerHTML=`
+    <div class="section"><div class="section-title">Performance Metrics</div>
+      <div class="stat-card" style="margin-bottom:12px"><div class="stat-label">Overall Accuracy</div><div class="stat-val green">${(acc*100).toFixed(2)}%</div></div>
+      <div style="overflow-x:auto"><table class="nb-table"><thead><tr><th>Class</th><th>TP</th><th>FP</th><th>FN</th><th>TN</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div style="margin-top:10px;font-size:12px;color:var(--text2)">
+        Accuracy=(TP+TN)/total &nbsp;|&nbsp; Precision=TP/(TP+FP) &nbsp;|&nbsp; Recall=TP/(TP+FN) &nbsp;|&nbsp; F1=2·P·R/(P+R)
+      </div>
+    </div>`;
+}
+
+function runKFold() {
+  const k=S.kValue, trainData=S.trainData;
+  const foldSize=Math.floor(trainData.length/k);
+  const accs=[];
+  for(let fi=0;fi<k;fi++){
+    const te=trainData.slice(fi*foldSize,(fi+1)*foldSize);
+    const tr=trainData.filter((_,i)=>i<fi*foldSize||i>=(fi+1)*foldSize);
+    trainNaiveBayes(tr);
+    const corrT=te.filter(row=>{
+      const vals=S.features.map(fIdx=>row[S.headers[fIdx]]);
+      return predictSample(vals)?.predictedClass===row[S.headers[S.targetCol]];
+    }).length;
+    accs.push(corrT/te.length);
+  }
+  trainNaiveBayes(S.trainData); // restore
+  const mu=mean(accs), sd=stddev(accs);
+  let rows=accs.map((a,i)=>`<tr><td>Fold ${i+1}</td><td><span class="metric-badge mb-acc">${(a*100).toFixed(2)}%</span></td></tr>`).join('');
+  rows+=`<tr style="background:var(--card2)"><td><strong>Mean ± Std</strong></td><td><strong>${(mu*100).toFixed(2)}% ± ${(sd*100).toFixed(2)}%</strong></td></tr>`;
+  destroyChart('cv');
+  $('s8-cv').innerHTML=`<div class="section"><div class="section-title">${k}-Fold Cross Validation</div>
+    <div style="overflow-x:auto"><table class="nb-table" style="margin-bottom:12px"><thead><tr><th>Fold</th><th>Accuracy</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="chart-wrap"><canvas id="ch-cv"></canvas></div></div>`;
+  S.charts.cv=new Chart($('ch-cv').getContext('2d'),{
+    type:'bar',
+    data:{labels:accs.map((_,i)=>`Fold ${i+1}`),datasets:[{data:accs.map(a=>+(a*100).toFixed(2)),backgroundColor:colorArr(k),borderRadius:4,borderSkipped:false}]},
+    options:{...chartOpts(),plugins:{...chartOpts().plugins,legend:{display:false},title:{display:true,text:'Fold Accuracies',color:'#d4d4e8'}}}
+  });
+}
+
+// ─────────────────────────────────────────
+// STAGE 9 — EDUCATIONAL SUMMARY
+// ─────────────────────────────────────────
+function initStage9() {
+  $('body-9').innerHTML=`
+    <div class="info-box success"><div class="ib-icon">🎉</div><div>You've completed the full Naive Bayes pipeline! Use the <strong>? button</strong> (bottom-right) anytime for the glossary, formula sheet, and common mistakes reference.</div></div>
+    <div class="section"><div class="section-title">What You Learned</div>
+      <div class="step-block active-step"><div class="step-title">Step 1 — Prior</div><div class="step-body">P(C) tells the model how common each class is before seeing any features. A rare class has a low prior and is harder to predict.</div></div>
+      <div class="step-block active-step"><div class="step-title">Step 2 — Likelihood</div><div class="step-body">P(X|C) measures how well each feature value fits each class. Gaussian NB fits a bell curve per feature per class. Multinomial NB counts frequencies.</div></div>
+      <div class="step-block active-step"><div class="step-title">Step 3 — Naive Assumption</div><div class="step-body">Features are assumed independent given the class. This is rarely true but makes computation tractable and often works well anyway.</div></div>
+      <div class="step-block active-step"><div class="step-title">Step 4 — Posterior</div><div class="step-body">P(C|X) ∝ P(X|C)·P(C). We use log-space to avoid underflow, sum log-likelihoods, and pick the class with the highest total score.</div></div>
+    </div>
+  `;
+  setStage(9,'done');
+}
+
+// ─────────────────────────────────────────
+// HELP DRAWER
+// ─────────────────────────────────────────
+function toggleDrawer() { $('help-drawer').classList.toggle('open'); }
+function dTab(id, btn) {
+  document.querySelectorAll('.d-content').forEach(c=>c.classList.remove('on'));
+  document.querySelectorAll('.d-tab').forEach(b=>b.classList.remove('on'));
+  $('d-'+id).classList.add('on'); btn.classList.add('on');
+}
+function toggleAcc(btn) {
+  const b=btn.nextElementSibling;
+  btn.classList.toggle('open'); b.classList.toggle('open');
+}
+
+// ─────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────
+buildNotebook();
+</script>
+</body>
+</html>
