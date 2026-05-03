@@ -1,4 +1,4 @@
-# 🧮 Naive Bayes Learning System
+# 🧮 Naive Bayes Learning App
 
 > An interactive, browser-based web application that teaches the **Naive Bayes classification algorithm** step by step — from raw CSV upload to full model evaluation — with visual explanations, mathematical walkthroughs, and zero installation required.
 
@@ -122,7 +122,7 @@ open index.html
 2. Go to **Settings → Pages → Source: main branch / root**
 3. Your app gets a public URL:
    ```
-   https://your-username.github.io/naive-bayes-learning-system
+[(https://sneha-space.github.io/naive-bayes-app/)]
    ```
 
 > **Requirements:** Any modern browser (Chrome recommended). No internet needed after the initial CDN load.
